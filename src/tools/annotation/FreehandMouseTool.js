@@ -88,7 +88,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
   }
 
   createNewMeasurement(eventData) {
-    console.log('creationMesure');
+    //console.log('creationMesure');
     const goodEventData =
       eventData && eventData.currentPoints && eventData.currentPoints.image;
 
@@ -814,7 +814,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     const toolState = getToolState(element, this.name);
     const config = this.configuration;
     const data = toolState.data[config.currentTool];
-    console.log('completeDrawing data : ', data);
+    //console.log('completeDrawing data : ', data);
 
     if (
       !freehandIntersect.end(data.handles.points) &&
@@ -1129,7 +1129,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     const toolState = getToolState(element, this.name);
     const config = this.configuration;
     const data = toolState.data[config.currentTool];
-    console.log('_endDrawing data', data);
+    //console.log('_endDrawing data', data);
 
     data.active = false;
     data.highlight = false;
