@@ -8,6 +8,7 @@ import toolColors from './../../stateManagement/toolColors.js';
 import {
   getNewContext,
   draw,
+  drawJoinedLines,
   setShadow,
   drawLine,
   drawPolygon,
@@ -19,7 +20,6 @@ import { lengthCursor } from '../cursors/index.js';
 import { getLogger } from '../../util/logger.js';
 import getPixelSpacing from '../../util/getPixelSpacing';
 import throttle from '../../util/throttle';
-
 const logger = getLogger('tools:annotation:LengthTool');
 
 /**
@@ -162,34 +162,6 @@ export default class LengthTool extends BaseAnnotationTool {
         setShadow(context, this.configuration);
 
         const color = toolColors.getColorIfActive(data);
-
-        //Test data
-        const p1 = {
-          x: 184,
-          y: 95,
-        };
-        const p2 = {
-          x: 339,
-          y: 95,
-        };
-        const p3 = {
-          x: 339,
-          y: 288,
-        };
-        const p4 = {
-          x: 184,
-          y: 288,
-        };
-        var points = [];
-        points.push(p1);
-        points.push(p2);
-        points.push(p3);
-        points.push(p4);
-
-        //Test Polygon draw
-        drawPolygon(context, element, points, {
-          color,
-        });
 
         // Draw the measurement line
         drawLine(context, element, data.handles.start, data.handles.end, {

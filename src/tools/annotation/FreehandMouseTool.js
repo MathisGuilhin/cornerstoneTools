@@ -19,7 +19,12 @@ import calculateSUV from '../../util/calculateSUV.js';
 import numbersWithCommas from '../../util/numbersWithCommas.js';
 
 // Drawing
-import { getNewContext, draw, drawJoinedLines } from '../../drawing/index.js';
+import {
+  getNewContext,
+  draw,
+  drawJoinedLines,
+  drawPolygon,
+} from '../../drawing/index.js';
 import drawLinkedTextBox from '../../drawing/drawLinkedTextBox.js';
 import drawHandles from '../../drawing/drawHandles.js';
 import { clipToBox } from '../../util/clip.js';
@@ -54,6 +59,8 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: defaultFreehandConfiguration(),
       svgCursor: freehandMouseCursor,
+      dataToInterpolate: [],
+      interpolatedData: [],
     };
 
     super(props, defaultProps);
@@ -88,7 +95,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
   }
 
   createNewMeasurement(eventData) {
-    //console.log('creationMesure');
     const goodEventData =
       eventData && eventData.currentPoints && eventData.currentPoints.image;
 
@@ -339,14 +345,65 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    * @returns {undefined}
    */
   renderToolData(evt) {
+    console.log('evt :', evt);
+    console.log('config', this.configuration);
     const eventData = evt.detail;
-
     // If we have no toolState for this element, return immediately as there is nothing to do
     const toolState = getToolState(evt.currentTarget, this.name);
 
-    if (!toolState) {
+    if (!toolState || toolState.data.length == 0) {
+      if (toolState && !toolState.removed) {
+        //Remove dataInterpolated if measurement has been removed
+        this.dataInterpolated = [];
+        this.dataToInterpolate = [];
+        toolState.removed = true;
+      }
+      if (this.dataInterpolated && this.dataInterpolated.length != 0) {
+        const imageId = evt.detail.image.imageId;
+        const seriesInstanceUID = imageId.substring(130, 182);
+        console.log('seriesInstanceUID :', seriesInstanceUID);
+        console.log(
+          'seriesInstanceUID2 :',
+          this.dataInterpolated[0].seriesInstanceUid
+        );
+        if (seriesInstanceUID === this.dataInterpolated[0].seriesInstanceUid) {
+          //Display interpolated data stored in dataInterpolated
+          const context = getNewContext(eventData.canvasContext.canvas);
+          const { image, element } = eventData;
+          const config = this.configuration;
+          draw(context, context => {
+            let color = toolColors.getToolColor();
+            let oldPoints = this.dataInterpolated[0].handles.points;
+            var points = [];
+            var temp;
+            var xtemp;
+            var ytemp;
+            for (let i = 0; i < oldPoints.length; i++) {
+              xtemp = oldPoints[i].x;
+              ytemp = oldPoints[i].y;
+              temp = { x: xtemp, y: ytemp };
+              points[i] = temp;
+            }
+            //Test Polygon draw
+            drawPolygon(context, element, points, {
+              color,
+            });
+          });
+        }
+      }
       return;
+    } else {
+      if (
+        this.dataToInterpolate &&
+        toolState.data[0] &&
+        toolState.data[0].handles.interpolate === true
+      ) {
+        //Copy data if user runned interpolation
+        //In the future, call here interpolation
+        this.dataInterpolated = this.dataToInterpolate;
+      }
     }
+    toolState.removed = false;
 
     const { image, element } = eventData;
     const config = this.configuration;
@@ -534,7 +591,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
         // Add this text line to the array to be displayed in the textbox
         textLines.push(areaText);
       }
-
       return textLines;
     }
 
@@ -814,7 +870,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     const toolState = getToolState(element, this.name);
     const config = this.configuration;
     const data = toolState.data[config.currentTool];
-    //console.log('completeDrawing data : ', data);
 
     if (
       !freehandIntersect.end(data.handles.points) &&
@@ -1129,7 +1184,13 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     const toolState = getToolState(element, this.name);
     const config = this.configuration;
     const data = toolState.data[config.currentTool];
-    //console.log('_endDrawing data', data);
+    console.log('dataEndDrawing', data);
+
+    //Save locally the data for future interpolation
+    if (!this.dataToInterpolate) {
+      this.dataToInterpolate = [];
+    }
+    this.dataToInterpolate.push(data);
 
     data.active = false;
     data.highlight = false;
