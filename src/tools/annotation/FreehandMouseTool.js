@@ -345,8 +345,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    * @returns {undefined}
    */
   renderToolData(evt) {
-    console.log('evt :', evt);
-    console.log('config', this.configuration);
     const eventData = evt.detail;
     // If we have no toolState for this element, return immediately as there is nothing to do
     const toolState = getToolState(evt.currentTarget, this.name);
@@ -361,11 +359,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       if (this.dataInterpolated && this.dataInterpolated.length != 0) {
         const imageId = evt.detail.image.imageId;
         const seriesInstanceUID = imageId.substring(130, 182);
-        console.log('seriesInstanceUID :', seriesInstanceUID);
-        console.log(
-          'seriesInstanceUID2 :',
-          this.dataInterpolated[0].seriesInstanceUid
-        );
         if (seriesInstanceUID === this.dataInterpolated[0].seriesInstanceUid) {
           //Display interpolated data stored in dataInterpolated
           const context = getNewContext(eventData.canvasContext.canvas);
@@ -1184,7 +1177,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     const toolState = getToolState(element, this.name);
     const config = this.configuration;
     const data = toolState.data[config.currentTool];
-    console.log('dataEndDrawing', data);
 
     //Save locally the data for future interpolation
     if (!this.dataToInterpolate) {
