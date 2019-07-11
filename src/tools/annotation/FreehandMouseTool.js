@@ -34,6 +34,8 @@ import freehandUtils from '../../util/freehand/index.js';
 import { getLogger } from '../../util/logger.js';
 import throttle from '../../util/throttle';
 
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+
 const logger = getLogger('tools:annotation:FreehandMouseTool');
 
 const {
@@ -347,56 +349,47 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
   renderToolData(evt) {
     const eventData = evt.detail;
     // If we have no toolState for this element, return immediately as there is nothing to do
-    const toolState = getToolState(evt.currentTarget, this.name);
-
+    var toolState = getToolState(evt.currentTarget, this.name);
     if (!toolState || toolState.data.length == 0) {
-      if (toolState && !toolState.removed) {
-        //Remove dataInterpolated if measurement has been removed
-        this.dataInterpolated = [];
-        this.dataToInterpolate = [];
-        toolState.removed = true;
-      }
       if (this.dataInterpolated && this.dataInterpolated.length != 0) {
         const imageId = evt.detail.image.imageId;
         const seriesInstanceUID = imageId.substring(130, 182);
         if (seriesInstanceUID === this.dataInterpolated[0].seriesInstanceUid) {
-          //Display interpolated data stored in dataInterpolated
-          const context = getNewContext(eventData.canvasContext.canvas);
-          const { image, element } = eventData;
-          const config = this.configuration;
-          draw(context, context => {
-            let color = toolColors.getToolColor();
-            let oldPoints = this.dataInterpolated[0].handles.points;
-            var points = [];
-            var temp;
-            var xtemp;
-            var ytemp;
-            for (let i = 0; i < oldPoints.length; i++) {
-              xtemp = oldPoints[i].x;
-              ytemp = oldPoints[i].y;
-              temp = { x: xtemp, y: ytemp };
-              points[i] = temp;
-            }
-            //Test Polygon draw
-            drawPolygon(context, element, points, {
-              color,
-            });
-          });
+          //toolState = this.lastState;
+          if (!evt.detail.currentPoint) {
+            evt.detail.currentPoints = {};
+          }
+          let oldPoints = this.dataInterpolated[0].handles.points;
+          if (!evt.detail.currentPoints.image) {
+            evt.detail.currentPoints.image = {
+              x: oldPoints[0].x,
+              y: oldPoints[0].y,
+            };
+          }
+          this.addNewMeasurement(evt);
+          for (let i = 1; i < oldPoints.length; i++) {
+            evt.detail.currentPoints.image = {
+              x: oldPoints[i].x,
+              y: oldPoints[i].y,
+            };
+            this._addPoint(evt.detail);
+          }
+          this.completeDrawing(evt.detail.element);
         }
       }
       return;
-    } else {
-      if (
-        this.dataToInterpolate &&
-        toolState.data[0] &&
-        toolState.data[0].handles.interpolate === true
-      ) {
-        //Copy data if user runned interpolation
-        //In the future, call here interpolation
-        this.dataInterpolated = this.dataToInterpolate;
-      }
     }
-    toolState.removed = false;
+    if (
+      //TODO : Handle single call to interpolate
+      this.dataToInterpolate &&
+      toolState.data[0] &&
+      toolState.data[0].handles.interpolate === true
+    ) {
+      toolState.data[0].handles.interpolate = false;
+      //Copy data if user runned interpolation
+      //In the future, call here interpolation
+      this.dataInterpolated = this.dataToInterpolate;
+    }
 
     const { image, element } = eventData;
     const config = this.configuration;
