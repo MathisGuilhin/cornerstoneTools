@@ -12,6 +12,7 @@ import external from '../externalModules.js';
  */
 function newImageIdSpecificToolStateManager() {
   let toolState = {};
+  let customToolState = {};
 
   // Here we add tool state, this is done by tools as well
   // As modules that restore saved state
@@ -30,6 +31,14 @@ function newImageIdSpecificToolStateManager() {
 
   function restoreToolState(savedToolState) {
     toolState = savedToolState;
+  }
+
+  function saveCustomToolState() {
+    return customToolState;
+  }
+
+  function restoreCustomToolState(savedToolState) {
+    customToolState = savedToolState;
   }
 
   // Here we add tool state, this is done by tools as well
@@ -109,6 +118,8 @@ function newImageIdSpecificToolStateManager() {
     restoreImageIdToolState,
     saveToolState,
     restoreToolState,
+    saveCustomToolState,
+    restoreCustomToolState,
     toolState,
   };
 }

@@ -33,8 +33,10 @@ import { freehandMouseCursor } from '../cursors/index.js';
 import freehandUtils from '../../util/freehand/index.js';
 import { getLogger } from '../../util/logger.js';
 import throttle from '../../util/throttle';
-
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import {
+  newImageIdSpecificToolStateManager,
+  globalImageIdSpecificToolStateManager,
+} from '../../stateManagement/imageIdSpecificStateManager.js';
 
 const logger = getLogger('tools:annotation:FreehandMouseTool');
 
@@ -348,7 +350,21 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    */
   renderToolData(evt) {
     const eventData = evt.detail;
-    // If we have no toolState for this element, return immediately as there is nothing to do
+    var loadedData = globalImageIdSpecificToolStateManager.saveCustomToolState();
+    var currentImageId = eventData.image.imageId;
+    if (loadedData[currentImageId]) {
+      for (let i = 0; i < loadedData[currentImageId].length; i++) {
+        if (!loadedData[currentImageId][i].displayed) {
+          loadedData[currentImageId][i].displayed = true;
+          addToolState(
+            eventData.element,
+            this.name,
+            loadedData[currentImageId][i]
+          );
+        }
+      }
+    }
+
     var toolState = getToolState(evt.currentTarget, this.name);
     if (!toolState || toolState.data.length == 0) {
       if (this.dataInterpolated && this.dataInterpolated.length != 0) {
