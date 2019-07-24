@@ -350,6 +350,8 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    */
   renderToolData(evt) {
     const eventData = evt.detail;
+
+    //Load data if there is some
     var loadedData = globalImageIdSpecificToolStateManager.saveCustomToolState();
     var currentImageId = eventData.image.imageId;
     if (loadedData[currentImageId]) {
@@ -371,7 +373,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
         const imageId = evt.detail.image.imageId;
         const seriesInstanceUID = imageId.substring(130, 182);
         if (seriesInstanceUID === this.dataInterpolated[0].seriesInstanceUid) {
-          //toolState = this.lastState;
           if (!evt.detail.currentPoint) {
             evt.detail.currentPoints = {};
           }
@@ -396,7 +397,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       return;
     }
     if (
-      //TODO : Handle single call to interpolate
       this.dataToInterpolate &&
       toolState.data[0] &&
       toolState.data[0].handles.interpolate === true
@@ -413,6 +413,67 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       'generalSeriesModule',
       image.imageId
     );
+    const study = external.cornerstone.metaData.get('study', image.imageId);
+    const series = external.cornerstone.metaData.get('series', image.imageId);
+    const patient = external.cornerstone.metaData.get('patient', image.imageId);
+    const instance = external.cornerstone.metaData.get(
+      'instance',
+      image.imageId
+    );
+    for (let i = 0; i < toolState.data.length; i++) {
+      if (!toolState.data[i].metadata) {
+        toolState.data[i].metadata = {};
+        toolState.data[i].metadata.patient = patient;
+        toolState.data[i].metadata.study = study;
+        toolState.data[i].metadata.series = series;
+        toolState.data[i].metadata.instance = instance;
+      }
+    }
+    //console.log('redux', OHIF.redux.reducers.servers);
+    /*const server = OHIF.servers.getCurrentServer();
+    var metadata = OHIF.studies.retrieveStudyMetadata(
+      server,
+      toolState.data[0].studyInstanceUid
+    );
+    console.log('metadata', metadata);*/
+    /*toolState.data[0].seriesModule = seriesModule;
+    const patientStudyModule = external.cornerstone.metaData.get(
+      'patientStudyModule',
+      image.imageId
+    );
+    const imagePlaneModule = external.cornerstone.metaData.get(
+      'imagePlaneModule',
+      image.imageId
+    );
+    const imagePixelModule = external.cornerstone.metaData.get(
+      'imagePixelModule',
+      image.imageId
+    );
+    const voiLutModule = external.cornerstone.metaData.get(
+      'voiLutModule',
+      image.imageId
+    );
+    const modalityLutModule = external.cornerstone.metaData.get(
+      'modalityLutModule',
+      image.imageId
+    );
+    const sopCommonModule = external.cornerstone.metaData.get(
+      'sopCommonModule',
+      image.imageId
+    );
+    const petIsotopeModule = external.cornerstone.metaData.get(
+      'petIsotopeModule',
+      image.imageId
+    );
+    console.log('seriesModule', seriesModule);
+    console.log('patientStudyModule', patientStudyModule);
+    console.log('imagePlaneModule', imagePlaneModule);
+    console.log('imagePixelModule', imagePixelModule);
+    console.log('voiLutModule', voiLutModule);
+    console.log('modalityLutModule', modalityLutModule);
+    console.log('sopCommonModule', sopCommonModule);
+    console.log('petIsotopeModule', petIsotopeModule);*/
+
     const modality = seriesModule ? seriesModule.modality : null;
 
     // We have tool data for this element - iterate over each one and draw it
