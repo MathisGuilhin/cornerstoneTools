@@ -413,6 +413,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       'generalSeriesModule',
       image.imageId
     );
+
     const study = external.cornerstone.metaData.get('study', image.imageId);
     const series = external.cornerstone.metaData.get('series', image.imageId);
     const patient = external.cornerstone.metaData.get('patient', image.imageId);
@@ -420,6 +421,8 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       'instance',
       image.imageId
     );
+    instance.height = image.height;
+    instance.width = image.width;
     for (let i = 0; i < toolState.data.length; i++) {
       if (!toolState.data[i].metadata) {
         toolState.data[i].metadata = {};
@@ -429,50 +432,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
         toolState.data[i].metadata.instance = instance;
       }
     }
-    //console.log('redux', OHIF.redux.reducers.servers);
-    /*const server = OHIF.servers.getCurrentServer();
-    var metadata = OHIF.studies.retrieveStudyMetadata(
-      server,
-      toolState.data[0].studyInstanceUid
-    );
-    console.log('metadata', metadata);*/
-    /*toolState.data[0].seriesModule = seriesModule;
-    const patientStudyModule = external.cornerstone.metaData.get(
-      'patientStudyModule',
-      image.imageId
-    );
-    const imagePlaneModule = external.cornerstone.metaData.get(
-      'imagePlaneModule',
-      image.imageId
-    );
-    const imagePixelModule = external.cornerstone.metaData.get(
-      'imagePixelModule',
-      image.imageId
-    );
-    const voiLutModule = external.cornerstone.metaData.get(
-      'voiLutModule',
-      image.imageId
-    );
-    const modalityLutModule = external.cornerstone.metaData.get(
-      'modalityLutModule',
-      image.imageId
-    );
-    const sopCommonModule = external.cornerstone.metaData.get(
-      'sopCommonModule',
-      image.imageId
-    );
-    const petIsotopeModule = external.cornerstone.metaData.get(
-      'petIsotopeModule',
-      image.imageId
-    );
-    console.log('seriesModule', seriesModule);
-    console.log('patientStudyModule', patientStudyModule);
-    console.log('imagePlaneModule', imagePlaneModule);
-    console.log('imagePixelModule', imagePixelModule);
-    console.log('voiLutModule', voiLutModule);
-    console.log('modalityLutModule', modalityLutModule);
-    console.log('sopCommonModule', sopCommonModule);
-    console.log('petIsotopeModule', petIsotopeModule);*/
 
     const modality = seriesModule ? seriesModule.modality : null;
 
