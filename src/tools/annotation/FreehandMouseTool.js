@@ -507,7 +507,12 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
           }
         } else {
           fillColor = toolColors.getToolColor();
+          if (data.location) {
+            color = toolColors.getToolColorWithLabel(data.location);
+          }
         }
+
+        console.log('color', color);
 
         if (data.handles.points.length) {
           for (let j = 0; j < data.handles.points.length; j++) {

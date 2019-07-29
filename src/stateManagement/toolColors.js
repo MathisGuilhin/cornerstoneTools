@@ -2,6 +2,14 @@ let defaultColor = 'white',
   activeColor = 'greenyellow',
   fillColor = 'transparent';
 
+let labelToolColors = {
+  'Tumor type 1': 'DarkGoldenRod',
+  'Tumor type 2': 'coral',
+  'Tumor type 3': 'DarkSlateBlue',
+  'Tumor type 4': 'DeepSkyBlue',
+  'Tumor type 5': 'Moccasin',
+};
+
 function setFillColor(color) {
   fillColor = color;
 }
@@ -14,7 +22,13 @@ function setToolColor(color) {
   defaultColor = color;
 }
 
-function getToolColor() {
+function getToolColorWithLabel(label) {
+  if (labelToolColors[label]) {
+    return labelToolColors[label];
+  }
+}
+
+function getToolColor(label) {
   return defaultColor;
 }
 
@@ -38,6 +52,7 @@ const toolColors = {
   setFillColor,
   getFillColor,
   setToolColor,
+  getToolColorWithLabel,
   getToolColor,
   setActiveColor,
   getActiveColor,
