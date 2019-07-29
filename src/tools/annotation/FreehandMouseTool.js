@@ -64,7 +64,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       configuration: defaultFreehandConfiguration(),
       svgCursor: freehandMouseCursor,
       dataToInterpolate: [],
-      interpolatedData: [],
+      dataInterpolated: {},
     };
 
     super(props, defaultProps);
@@ -343,6 +343,64 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
   }
 
   /**
+   * @param {*} evt
+   * @returns {boolean} if we have to interpolate or not depending on imageNumber
+   */
+  checkValidInterpolation(evt) {
+    const eventData = evt.detail;
+    const { image, element } = eventData;
+    var instance = external.cornerstone.metaData.get('instance', image.imageId);
+    var imageNumber = instance.imageNumber;
+    var maxInterpolate = 0;
+    var minInterpolate = Number.MAX_SAFE_INTEGER;
+    this.dataToInterpolate.forEach(function(toolState) {
+      var currentImageNumber = toolState.metadata.instance.imageNumber;
+      if (currentImageNumber > maxInterpolate) {
+        maxInterpolate = currentImageNumber;
+      }
+      if (currentImageNumber < minInterpolate) {
+        minInterpolate = currentImageNumber;
+      }
+    });
+    if (imageNumber < maxInterpolate && imageNumber > minInterpolate) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * @param {*} evt
+   * @returns {undefined}
+   */
+  displayInterpolatedData(evt) {
+    //Create virtual currentPoint if undefined
+    if (!evt.detail.currentPoint) {
+      evt.detail.currentPoints = {};
+    }
+    let pointsInterpolated = this.dataInterpolated.handles.points;
+    //Virtually set mouse click coordonates
+    if (!evt.detail.currentPoints.image) {
+      evt.detail.currentPoints.image = {
+        x: pointsInterpolated[0].x,
+        y: pointsInterpolated[0].y,
+      };
+    }
+    //Create the measurement and the first point
+    this.addNewMeasurement(evt);
+    //Set the other points coordinates
+    if (!evt.detail.dataToDisplay) {
+      evt.detail.dataToDisplay = {};
+    }
+    evt.detail.dataToDisplay = pointsInterpolated;
+    //Add all the other points
+    this._addPoints(evt.detail);
+    //Complete the drawing
+    this.completeDrawing(evt.detail.element);
+    return;
+  }
+
+  /**
    *
    *
    * @param {*} evt
@@ -369,42 +427,31 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
 
     var toolState = getToolState(evt.currentTarget, this.name);
     if (!toolState || toolState.data.length == 0) {
-      if (this.dataInterpolated && this.dataInterpolated.length != 0) {
+      if (this.dataInterpolated && this.dataInterpolated.visible) {
+        //If there is interpolated data to display
         const imageId = evt.detail.image.imageId;
-        const seriesInstanceUID = imageId.substring(130, 182);
-        if (seriesInstanceUID === this.dataInterpolated[0].seriesInstanceUid) {
-          if (!evt.detail.currentPoint) {
-            evt.detail.currentPoints = {};
+        const seriesInstanceUID = imageId.split('/')[10];
+        if (seriesInstanceUID === this.dataInterpolated.seriesInstanceUid) {
+          //If the interpolated data corresponds to the same series
+          if (this.checkValidInterpolation(evt)) {
+            this.displayInterpolatedData(evt);
           }
-          let oldPoints = this.dataInterpolated[0].handles.points;
-          if (!evt.detail.currentPoints.image) {
-            evt.detail.currentPoints.image = {
-              x: oldPoints[0].x,
-              y: oldPoints[0].y,
-            };
-          }
-          this.addNewMeasurement(evt);
-          for (let i = 1; i < oldPoints.length; i++) {
-            evt.detail.currentPoints.image = {
-              x: oldPoints[i].x,
-              y: oldPoints[i].y,
-            };
-            this._addPoint(evt.detail);
-          }
-          this.completeDrawing(evt.detail.element);
         }
       }
       return;
     }
-    if (
-      this.dataToInterpolate &&
-      toolState.data[0] &&
-      toolState.data[0].handles.interpolate === true
-    ) {
-      toolState.data[0].handles.interpolate = false;
-      //Copy data if user runned interpolation
-      //In the future, call here interpolation
-      this.dataInterpolated = this.dataToInterpolate;
+    if (this.dataToInterpolate && toolState.data[0]) {
+      for (let i = 0; i < toolState.data.length; i++) {
+        //Check which data will be interpolated
+        var currentToolState = toolState.data[i];
+        if (
+          currentToolState.selectedData &&
+          currentToolState.interpolate === true
+        ) {
+          this.dataInterpolated = toolState.data[i];
+          currentToolState.interpolate = false;
+        }
+      }
     }
 
     const { image, element } = eventData;
@@ -1167,6 +1214,53 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
     // Increment the current handle value
     config.currentHandle += 1;
 
+    // Force onImageRendered to fire
+    external.cornerstone.updateImage(eventData.element);
+    this.fireModifiedEvent(eventData.element, data);
+  }
+
+  /**
+   * Adds points for interpolation
+   * It allows to update the image only after all the points were added to win time
+   * Basically, it does the same thing that addPoint but with a loop.
+   * The major change is that the image is only rendered at the end
+   * @private
+   * @param {Object} eventData - data object associated with an event.
+   * @returns {undefined}
+   */
+  _addPoints(eventData) {
+    var toolState = getToolState(eventData.element, this.name);
+    var config = this.configuration;
+    var data = toolState.data[config.currentTool];
+    var dataToDisplay = eventData.dataToDisplay;
+    for (let i = 1; i < dataToDisplay.length; i++) {
+      eventData.currentPoints.image = {
+        x: dataToDisplay[i].x,
+        y: dataToDisplay[i].y,
+      };
+
+      if (data.handles.invalidHandlePlacement) {
+        return;
+      }
+
+      const newHandleData = new FreehandHandleData(
+        eventData.currentPoints.image
+      );
+
+      // If this is not the first handle
+      if (data.handles.points.length) {
+        // Add the line from the current handle to the new handle
+        data.handles.points[config.currentHandle - 1].lines.push(
+          eventData.currentPoints.image
+        );
+      }
+
+      // Add the new handle
+      data.handles.points.push(newHandleData);
+
+      // Increment the current handle value
+      config.currentHandle += 1;
+    }
     // Force onImageRendered to fire
     external.cornerstone.updateImage(eventData.element);
     this.fireModifiedEvent(eventData.element, data);
