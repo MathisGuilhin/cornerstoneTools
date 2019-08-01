@@ -238,6 +238,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    * @param image
    * @param element
    * @param data
+   * Recalculate parameters meanstddev, etc..
    */
   updateCachedStats(image, element, data) {
     // Define variables for the area and mean/standard deviation
@@ -511,8 +512,6 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
             color = toolColors.getToolColorWithLabel(data.location);
           }
         }
-
-        console.log('color', color);
 
         if (data.handles.points.length) {
           for (let j = 0; j < data.handles.points.length; j++) {
