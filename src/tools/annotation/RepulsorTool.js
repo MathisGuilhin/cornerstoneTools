@@ -41,14 +41,6 @@ import {
 
 const logger = getLogger('tools:annotation:RepulsorTool');
 
-const {
-  insertOrDelete,
-  freehandArea,
-  calculateFreehandStatistics,
-  freehandIntersect,
-  FreehandHandleData,
-} = freehandUtils;
-
 /**
  * @public
  * @class RepulsorTool
@@ -61,45 +53,92 @@ export default class RepulsorTool extends BaseTool {
     const defaultProps = {
       name: 'Repulsor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {},
     };
     super(props, defaultProps);
+    this._getMouseLocation = this._getMouseLocation.bind(this);
+    this._editMouseDragCallback = this._editMouseDragCallback.bind(this);
   }
 
   renderToolData(evt) {
     console.log('renderRepulsor');
+
+    const eventData = evt.detail;
+    const element = eventData.element;
+    const config = this.configuration;
+    element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
+    if (config.center) {
+      console.log('drawing');
+      const context = getNewContext(element.children[0]);
+      var options = {};
+      console.log(config.center);
+      var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
+      draw(context, context => {
+        drawCircle(context, eventData.element, config.center, 50, options);
+      });
+    }
   }
 
   preMouseDownCallback(evt) {
     const eventData = evt.detail;
     const element = eventData.element;
     element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
-    const context = getNewContext(element.children[0]);
-    var center = {
-      x: eventData.currentPoints.image.x,
-      y: eventData.currentPoints.image.y,
-    };
-    var options = {};
+    // Set the mouseLocation handle
+    //this._getMouseLocation(eventData);
+    const config = this.configuration;
 
-    var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
-    draw(context, context => {
-      drawCircle(context, eventData.element, center, 50, options);
-    });
+    if (!config.center) {
+      config.center = {};
+    }
+
+    config.center.x = eventData.currentPoints.image.x;
+    config.center.y = eventData.currentPoints.image.y;
+    external.cornerstone.updateImage(element);
   }
 
   _editMouseDragCallback(evt) {
     const eventData = evt.detail;
     const element = eventData.element;
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
-    const context = getNewContext(element.children[0]);
-    var center = {
-      x: eventData.currentPoints.image.x,
-      y: eventData.currentPoints.image.y,
-    };
-    var options = {};
+    // Set the mouseLocation handle
+    //this._getMouseLocation(eventData);
+    const config = this.configuration;
 
-    var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
-    draw(context, context => {
-      drawCircle(context, eventData.element, center, 50, options);
-    });
+    if (!config.center) {
+      config.center = {};
+    }
+
+    config.center.x = eventData.currentPoints.image.x;
+    config.center.y = eventData.currentPoints.image.y;
+    external.cornerstone.updateImage(element);
+  }
+
+  /**
+   * Gets the current mouse location and stores it in the configuration object.
+   *
+   * @private
+   * @param {Object} eventData The data assoicated with the event.
+   * @returns {undefined}
+   */
+  _getMouseLocation(eventData) {
+    // Set the mouseLocation handle
+    const config = this.configuration;
+
+    if (!config.center) {
+      config.center = {};
+    }
+
+    config.center.x = eventData.currentPoints.image.x;
+    config.center.y = eventData.currentPoints.image.y;
+  }
+
+  fireModifiedEvent(element, measurementData) {
+    const eventType = EVENTS.MEASUREMENT_MODIFIED;
+    const eventData = {
+      toolName: this.name,
+      element,
+      measurementData,
+    };
+
+    triggerEvent(element, eventType, eventData);
   }
 }
