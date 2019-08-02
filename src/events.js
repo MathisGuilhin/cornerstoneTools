@@ -59,7 +59,7 @@ const EVENTS = {
    * https://developer.mozilla.org/en-US/docs/Web/Events/wheel
    *  @type {String}
    */
-  MOUSE_WHEEL: 'cornerstonetoolsmousewheel',
+  MOUSE_WHEEL: 'mousewheel',
 
   //
   // TOUCH

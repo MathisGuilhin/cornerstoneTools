@@ -53,11 +53,15 @@ export default class RepulsorTool extends BaseTool {
     const defaultProps = {
       name: 'Repulsor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
+      configuration: {
+        radius: 50,
+      },
     };
     super(props, defaultProps);
     this._getMouseLocation = this._getMouseLocation.bind(this);
     this._editMouseDragCallback = this._editMouseDragCallback.bind(this);
+    this._editMouseUpCallback = this._editMouseUpCallback.bind(this);
+    this._editMouseWheelCallback = this._editMouseWheelCallback.bind(this);
   }
 
   renderToolData(evt) {
@@ -66,15 +70,19 @@ export default class RepulsorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     if (config.center) {
       console.log('drawing');
       const context = getNewContext(element.children[0]);
       var options = {};
       console.log(config.center);
-      var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
       draw(context, context => {
-        drawCircle(context, eventData.element, config.center, 50, options);
+        drawCircle(
+          context,
+          eventData.element,
+          config.center,
+          config.radius,
+          options
+        );
       });
     }
   }
@@ -83,33 +91,60 @@ export default class RepulsorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
+    element.addEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
+    element.addEventListener('wheel', this._editMouseWheelCallback);
     // Set the mouseLocation handle
-    //this._getMouseLocation(eventData);
-    const config = this.configuration;
-
-    if (!config.center) {
-      config.center = {};
-    }
-
-    config.center.x = eventData.currentPoints.image.x;
-    config.center.y = eventData.currentPoints.image.y;
+    this._getMouseLocation(eventData);
     external.cornerstone.updateImage(element);
   }
 
   _editMouseDragCallback(evt) {
     const eventData = evt.detail;
     const element = eventData.element;
-    // Set the mouseLocation handle
-    //this._getMouseLocation(eventData);
     const config = this.configuration;
-
-    if (!config.center) {
-      config.center = {};
+    const center = config.center;
+    const radius = config.radius;
+    // Set the mouseLocation handle
+    this._getMouseLocation(eventData);
+    var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
+    console.log('toolState', toolState);
+    if (toolState) {
+      const points = toolState.data[0].handles.points;
+      points.forEach(function(point) {
+        console.log(
+          Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2) <
+            Math.pow(radius, 2)
+        );
+      });
     }
-
-    config.center.x = eventData.currentPoints.image.x;
-    config.center.y = eventData.currentPoints.image.y;
     external.cornerstone.updateImage(element);
+  }
+
+  _editMouseUpCallback(evt) {
+    const eventData = evt.detail;
+    const element = eventData.element;
+    const config = this.configuration;
+    config.center = undefined;
+    config.radius = 50;
+    element.removeEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
+    element.removeEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
+    element.removeEventListener('wheel', this._editMouseWheelCallback);
+    external.cornerstone.updateImage(eventData.element);
+  }
+
+  _editMouseWheelCallback(evt) {
+    const config = this.configuration;
+    if (evt.deltaY < 0) {
+      config.radius += 10;
+    }
+    if (evt.deltaY > 0) {
+      if (config.radius > 10) {
+        config.radius -= 10;
+      }
+    }
+    //We get the element that is stored in the wheelevt in path to renderToolData
+    const element = evt.path[1];
+    external.cornerstone.updateImage(evt.path[1]);
   }
 
   /**
@@ -129,16 +164,5 @@ export default class RepulsorTool extends BaseTool {
 
     config.center.x = eventData.currentPoints.image.x;
     config.center.y = eventData.currentPoints.image.y;
-  }
-
-  fireModifiedEvent(element, measurementData) {
-    const eventType = EVENTS.MEASUREMENT_MODIFIED;
-    const eventData = {
-      toolName: this.name,
-      element,
-      measurementData,
-    };
-
-    triggerEvent(element, eventType, eventData);
   }
 }
