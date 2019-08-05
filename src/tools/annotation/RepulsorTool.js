@@ -132,6 +132,9 @@ export default class RepulsorTool extends BaseTool {
             if (i != 0) {
               points[i - 1].lines[0].x = points[i].x;
               points[i - 1].lines[0].y = points[i].y;
+            } else {
+              points[points.length - 1].lines[0].x = points[i].x;
+              points[points.length - 1].lines[0].y = points[i].y;
             }
           }
         }
