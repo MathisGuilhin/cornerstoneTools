@@ -54,7 +54,7 @@ export default class RepulsorTool extends BaseTool {
       name: 'Repulsor',
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        radius: 50,
+        radius: 40,
       },
     };
     super(props, defaultProps);
@@ -66,21 +66,19 @@ export default class RepulsorTool extends BaseTool {
 
   renderToolData(evt) {
     console.log('renderRepulsor');
-
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
+    const scale = eventData.viewport.scale;
     if (config.center) {
-      console.log('drawing');
       const context = getNewContext(element.children[0]);
       var options = {};
-      console.log(config.center);
       draw(context, context => {
         drawCircle(
           context,
           eventData.element,
           config.center,
-          config.radius,
+          config.radius * scale,
           options
         );
       });
@@ -90,11 +88,19 @@ export default class RepulsorTool extends BaseTool {
   preMouseDownCallback(evt) {
     const eventData = evt.detail;
     const element = eventData.element;
+    const config = this.configuration;
+    config.radius = 40;
     element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.addEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
     element.addEventListener('wheel', this._editMouseWheelCallback);
     // Set the mouseLocation handle
     this._getMouseLocation(eventData);
+    var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
+    if (toolState) {
+      for (let size = 0; size < toolState.data.length; size++) {
+        toolState.data[size].active = true;
+      }
+    }
     external.cornerstone.updateImage(element);
   }
 
@@ -107,15 +113,31 @@ export default class RepulsorTool extends BaseTool {
     // Set the mouseLocation handle
     this._getMouseLocation(eventData);
     var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
-    console.log('toolState', toolState);
     if (toolState) {
-      const points = toolState.data[0].handles.points;
-      points.forEach(function(point) {
-        console.log(
-          Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2) <
-            Math.pow(radius, 2)
-        );
-      });
+      for (let size = 0; size < toolState.data.length; size++) {
+        const points = toolState.data[size].handles.points;
+        for (let i = 0; i < points.length; i++) {
+          var currentDistance =
+            Math.pow(points[i].x - center.x, 2) +
+            Math.pow(points[i].y - center.y, 2);
+          if (currentDistance < Math.pow(radius, 2)) {
+            console.log('resize');
+            const vDir = {
+              x: points[i].x - center.x,
+              y: points[i].y - center.y,
+            };
+            var norme = Math.sqrt(Math.pow(vDir.x, 2) + Math.pow(vDir.y, 2));
+            vDir.x /= norme;
+            vDir.y /= norme;
+            points[i].x = center.x + radius * vDir.x;
+            points[i].y = center.y + radius * vDir.y;
+            if (i != 0) {
+              points[i - 1].lines[0].x = points[i].x;
+              points[i - 1].lines[0].y = points[i].y;
+            }
+          }
+        }
+      }
     }
     external.cornerstone.updateImage(element);
   }
@@ -124,8 +146,7 @@ export default class RepulsorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
-    config.center = undefined;
-    config.radius = 50;
+    config.radius = 0;
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.removeEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
     element.removeEventListener('wheel', this._editMouseWheelCallback);
