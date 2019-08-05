@@ -65,7 +65,6 @@ export default class RepulsorTool extends BaseTool {
   }
 
   renderToolData(evt) {
-    console.log('renderRepulsor');
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
@@ -89,7 +88,7 @@ export default class RepulsorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
-    config.radius = 40;
+    //config.radius = 40;
     element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.addEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
     element.addEventListener('wheel', this._editMouseWheelCallback);
@@ -121,7 +120,6 @@ export default class RepulsorTool extends BaseTool {
             Math.pow(points[i].x - center.x, 2) +
             Math.pow(points[i].y - center.y, 2);
           if (currentDistance < Math.pow(radius, 2)) {
-            console.log('resize');
             const vDir = {
               x: points[i].x - center.x,
               y: points[i].y - center.y,
@@ -146,7 +144,7 @@ export default class RepulsorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     const config = this.configuration;
-    config.radius = 0;
+    config.center = undefined;
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.removeEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
     element.removeEventListener('wheel', this._editMouseWheelCallback);
