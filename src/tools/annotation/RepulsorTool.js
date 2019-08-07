@@ -41,6 +41,8 @@ import {
 
 const logger = getLogger('tools:annotation:RepulsorTool');
 
+const { freehandIntersect } = freehandUtils;
+
 /**
  * @public
  * @class RepulsorTool
@@ -100,6 +102,7 @@ export default class RepulsorTool extends BaseTool {
         toolState.data[size].active = true;
       }
     }
+    config.firstPlacement = JSON.parse(JSON.stringify(toolState));
     external.cornerstone.updateImage(element);
   }
 
@@ -114,7 +117,7 @@ export default class RepulsorTool extends BaseTool {
     var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
     if (toolState) {
       for (let size = 0; size < toolState.data.length; size++) {
-        const points = toolState.data[size].handles.points;
+        var points = toolState.data[size].handles.points;
         for (let i = 0; i < points.length; i++) {
           var currentDistance =
             Math.pow(points[i].x - center.x, 2) +
@@ -136,6 +139,10 @@ export default class RepulsorTool extends BaseTool {
               points[points.length - 1].lines[0].x = points[i].x;
               points[points.length - 1].lines[0].y = points[i].y;
             }
+            var intersect = freehandIntersect.modify(points, i);
+            if (intersect) {
+              toolState.data[size].handles.invalidHandlePlacement = true;
+            }
           }
         }
       }
@@ -148,6 +155,15 @@ export default class RepulsorTool extends BaseTool {
     const element = eventData.element;
     const config = this.configuration;
     config.center = undefined;
+    var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
+    for (let size = 0; size < toolState.data.length; size++) {
+      if (toolState.data[size].handles.invalidHandlePlacement) {
+        console.log('backup');
+        toolState.data[size].handles.points =
+          config.firstPlacement.data[size].handles.points;
+        toolState.data[size].handles.invalidHandlePlacement = false;
+      }
+    }
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.removeEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
     element.removeEventListener('wheel', this._editMouseWheelCallback);
