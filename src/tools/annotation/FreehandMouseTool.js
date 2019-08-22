@@ -614,21 +614,10 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
       const textLines = [];
 
       // If the area is a sane value, display it
-      if (area) {
-        // Determine the area suffix based on the pixel spacing in the image.
-        // If pixel spacing is present, use millimeters. Otherwise, use pixels.
-        // This uses Char code 178 for a superscript 2
-        let suffix = ` mm${String.fromCharCode(178)}`;
-
-        if (!image.rowPixelSpacing || !image.columnPixelSpacing) {
-          suffix = ` pixels${String.fromCharCode(178)}`;
-        }
-
-        // Create a line of text to display the area and its units
-        const areaText = `Area: ${numbersWithCommas(area.toFixed(2))}${suffix}`;
-
-        // Add this text line to the array to be displayed in the textbox
-        textLines.push(areaText);
+      if (data.location) {
+        textLines.push(data.location);
+      } else {
+        textLines.push('unknowledgeable tumor type');
       }
       return textLines;
     }
