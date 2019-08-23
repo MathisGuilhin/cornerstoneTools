@@ -73,7 +73,6 @@ export default class RepulsorTool extends BaseTool {
     const element = eventData.element;
     const config = this.configuration;
     const scale = eventData.viewport.scale;
-    console.log(this);
     if (config.center) {
       const context = getNewContext(element.children[0]);
       var options = {
@@ -164,7 +163,6 @@ export default class RepulsorTool extends BaseTool {
     if (toolState) {
       for (let size = 0; size < toolState.data.length; size++) {
         if (toolState.data[size].handles.invalidHandlePlacement) {
-          console.log('backup');
           toolState.data[size].handles.points =
             config.firstPlacement.data[size].handles.points;
           toolState.data[size].handles.invalidHandlePlacement = false;
@@ -188,9 +186,7 @@ export default class RepulsorTool extends BaseTool {
     } else if (evt.keyCode == 99) {
       if (config.colorIndex < 2) {
         config.colorIndex++;
-        console.log('++');
       } else {
-        console.log('++');
         config.colorIndex = 0;
       }
     }
