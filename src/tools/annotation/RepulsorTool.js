@@ -57,13 +57,15 @@ export default class RepulsorTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         radius: 40,
+        colors: ['Black', 'Gold', 'Blue'],
+        colorIndex: 0,
       },
     };
     super(props, defaultProps);
     this._getMouseLocation = this._getMouseLocation.bind(this);
     this._editMouseDragCallback = this._editMouseDragCallback.bind(this);
     this._editMouseUpCallback = this._editMouseUpCallback.bind(this);
-    this._editMouseWheelCallback = this._editMouseWheelCallback.bind(this);
+    this._editKeyPressCallback = this._editKeyPressCallback.bind(this);
   }
 
   renderToolData(evt) {
@@ -71,9 +73,12 @@ export default class RepulsorTool extends BaseTool {
     const element = eventData.element;
     const config = this.configuration;
     const scale = eventData.viewport.scale;
+    console.log(this);
     if (config.center) {
       const context = getNewContext(element.children[0]);
-      var options = {};
+      var options = {
+        color: config.colors[config.colorIndex],
+      };
       draw(context, context => {
         drawCircle(
           context,
@@ -93,7 +98,7 @@ export default class RepulsorTool extends BaseTool {
     //config.radius = 40;
     element.addEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.addEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
-    element.addEventListener('wheel', this._editMouseWheelCallback);
+    window.addEventListener('keypress', this._editKeyPressCallback);
     // Set the mouseLocation handle
     this._getMouseLocation(eventData);
     var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
@@ -101,8 +106,8 @@ export default class RepulsorTool extends BaseTool {
       for (let size = 0; size < toolState.data.length; size++) {
         toolState.data[size].active = true;
       }
+      config.firstPlacement = JSON.parse(JSON.stringify(toolState));
     }
-    config.firstPlacement = JSON.parse(JSON.stringify(toolState));
     external.cornerstone.updateImage(element);
   }
 
@@ -156,33 +161,42 @@ export default class RepulsorTool extends BaseTool {
     const config = this.configuration;
     config.center = undefined;
     var toolState = getToolState(evt.currentTarget, 'FreehandMouse');
-    for (let size = 0; size < toolState.data.length; size++) {
-      if (toolState.data[size].handles.invalidHandlePlacement) {
-        console.log('backup');
-        toolState.data[size].handles.points =
-          config.firstPlacement.data[size].handles.points;
-        toolState.data[size].handles.invalidHandlePlacement = false;
+    if (toolState) {
+      for (let size = 0; size < toolState.data.length; size++) {
+        if (toolState.data[size].handles.invalidHandlePlacement) {
+          console.log('backup');
+          toolState.data[size].handles.points =
+            config.firstPlacement.data[size].handles.points;
+          toolState.data[size].handles.invalidHandlePlacement = false;
+        }
       }
     }
     element.removeEventListener(EVENTS.MOUSE_DRAG, this._editMouseDragCallback);
     element.removeEventListener(EVENTS.MOUSE_UP, this._editMouseUpCallback);
-    element.removeEventListener('wheel', this._editMouseWheelCallback);
+    window.removeEventListener('keypress', this._editKeyPressCallback);
     external.cornerstone.updateImage(eventData.element);
   }
 
-  _editMouseWheelCallback(evt) {
+  _editKeyPressCallback(evt) {
     const config = this.configuration;
-    if (evt.deltaY < 0) {
+    if (evt.keyCode == 100) {
       config.radius += 10;
-    }
-    if (evt.deltaY > 0) {
+    } else if (evt.keyCode == 113) {
       if (config.radius > 10) {
         config.radius -= 10;
       }
+    } else if (evt.keyCode == 99) {
+      if (config.colorIndex < 2) {
+        config.colorIndex++;
+        console.log('++');
+      } else {
+        console.log('++');
+        config.colorIndex = 0;
+      }
     }
-    //We get the element that is stored in the wheelevt in path to renderToolData
-    const element = evt.path[1];
-    external.cornerstone.updateImage(evt.path[1]);
+    //We get the element that is stored in 'this' to render the new size of the tool
+    const element = this.element;
+    external.cornerstone.updateImage(element);
   }
 
   /**
