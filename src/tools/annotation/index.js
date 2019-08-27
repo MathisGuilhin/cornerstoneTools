@@ -5,11 +5,11 @@ import CircleRoiTool from './CircleRoiTool.js';
 import CobbAngleTool from './CobbAngleTool.js';
 import EllipticalRoiTool from './EllipticalRoiTool.js';
 import FreehandMouseTool from './FreehandMouseTool.js';
+import RepulsorTool from './RepulsorTool.js';
 import LengthTool from './LengthTool.js';
 import ProbeTool from './ProbeTool.js';
 import RectangleRoiTool from './RectangleRoiTool.js';
 import TextMarkerTool from './TextMarkerTool.js';
-import RepulsorTool from './RepulsorTool.js';
 
 // Named Exports
 export { default as AngleTool } from './AngleTool.js';
@@ -19,11 +19,11 @@ export { default as CircleRoiTool } from './CircleRoiTool.js';
 export { default as CobbAngleTool } from './CobbAngleTool.js';
 export { default as EllipticalRoiTool } from './EllipticalRoiTool.js';
 export { default as FreehandMouseTool } from './FreehandMouseTool.js';
+export { default as RepulsorTool } from './RepulsorTool.js';
 export { default as LengthTool } from './LengthTool.js';
 export { default as ProbeTool } from './ProbeTool.js';
 export { default as RectangleRoiTool } from './RectangleRoiTool.js';
 export { default as TextMarkerTool } from './TextMarkerTool.js';
-export { default as RepulsorTool } from './RepulsorTool.js';
 
 // Namespace, default export
 export default {
@@ -34,9 +34,9 @@ export default {
   CobbAngleTool,
   EllipticalRoiTool,
   FreehandMouseTool,
+  RepulsorTool,
   LengthTool,
   ProbeTool,
   RectangleRoiTool,
   TextMarkerTool,
-  RepulsorTool,
 };

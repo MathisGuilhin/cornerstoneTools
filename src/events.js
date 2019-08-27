@@ -59,7 +59,7 @@ const EVENTS = {
    * https://developer.mozilla.org/en-US/docs/Web/Events/wheel
    *  @type {String}
    */
-  MOUSE_WHEEL: 'mousewheel',
+  MOUSE_WHEEL: 'cornerstonetoolsmousewheel',
 
   //
   // TOUCH
@@ -197,6 +197,16 @@ const EVENTS = {
    *  @type {String}
    */
   STACK_SCROLL: 'cornerstonetoolsstackscroll',
+
+  /**
+   *  @type {String}
+   */
+  STACK_PREFETCH_IMAGE_LOADED: 'cornerstonetoolsstackprefetchimageloaded',
+
+  /**
+   *  @type {String}
+   */
+  STACK_PREFETCH_DONE: 'cornerstonetoolsstackprefetchdone',
 };
 
 export default EVENTS;

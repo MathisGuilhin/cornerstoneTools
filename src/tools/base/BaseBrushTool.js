@@ -7,7 +7,7 @@ import isToolActive from './../../store/isToolActive.js';
 import store from './../../store/index.js';
 import triggerEvent from './../../util/triggerEvent.js';
 
-const { state, setters } = store.modules.brush;
+const { state, getters, setters } = store.modules.brush;
 
 /**
  * @abstract
@@ -19,7 +19,9 @@ const { state, setters } = store.modules.brush;
 class BaseBrushTool extends BaseTool {
   constructor(props, defaultProps = {}) {
     if (!defaultProps.configuration) {
-      defaultProps.configuration = {};
+      defaultProps.configuration = {
+        skipPaintForInvisibleSegmentations: false,
+      };
     }
     defaultProps.configuration.referencedToolData = 'brush';
     super(props, defaultProps);
@@ -189,13 +191,36 @@ class BaseBrushTool extends BaseTool {
    * @returns {void}
    */
   _drawingMouseUpCallback(evt) {
-    const eventData = evt.detail;
-    const element = eventData.element;
-
     this._drawing = false;
     this._mouseUpRender = true;
 
-    triggerEvent(evt.detail.element, EVENTS.MEASUREMENT_COMPLETED, evt.detail);
+    const element = evt.detail.element;
+    const toolData = (
+      getToolState(element, this.name) ||
+      getToolState(element, 'brush') ||
+      {}
+    ).data;
+    const segmentationIndex = state.drawColorId;
+
+    if (
+      !this.configuration.skipPaintForInvisibleSegmentations ||
+      _isSegmentationVisibleForElement(element, segmentationIndex, toolData)
+    ) {
+      let measurementData = null;
+
+      if (toolData && toolData.length > segmentationIndex) {
+        measurementData = toolData[segmentationIndex];
+      }
+
+      const eventData = {
+        toolName: this.name,
+        element,
+        measurementData,
+        evtDetail: evt.detail,
+      };
+
+      triggerEvent(element, EVENTS.MEASUREMENT_COMPLETED, eventData);
+    }
 
     this._stopListeningForMouseUp(element);
   }
@@ -497,21 +522,7 @@ class BaseBrushTool extends BaseTool {
 
     const imageIds = stackToolState.data[0].imageIds;
 
-    const enabledElement = external.cornerstone.getEnabledElement(element);
-
-    const image = enabledElement.image;
-
-    const dim = {
-      xy: image.columns * image.rows,
-      z: image.rows,
-      xyz: image.columns * image.rows * imageIds.length,
-    };
-
     const toolState = globalImageIdSpecificToolStateManager.saveToolState();
-
-    const buffer = new ArrayBuffer(dim.xyz);
-
-    const uint8View = new Uint8Array(buffer);
 
     for (let i = 0; i < imageIds.length; i++) {
       const imageId = imageIds[i];
@@ -526,6 +537,29 @@ class BaseBrushTool extends BaseTool {
       }
     }
   }
+}
+
+function _isSegmentationVisibleForElement(
+  element,
+  segmentationIndex,
+  toolData
+) {
+  const enabledElement = external.cornerstone.getEnabledElement(element);
+  const visibleSegmentationsForElement = getters.visibleSegmentationsForElement(
+    enabledElement.uuid
+  );
+
+  return (
+    // Global alpha for active segmentation
+    state.alpha > 0.001 &&
+    // Master isVisible toggle per seg + element
+    // TODO: If false, should we check the secondary alpha that's applied to segmentions that aren't visible?
+    visibleSegmentationsForElement[segmentationIndex] === true &&
+    // Does not have alpha, or alpha is > 1 (0 to 255)
+    (toolData[segmentationIndex] === undefined ||
+      toolData[segmentationIndex].alpha === undefined ||
+      toolData[segmentationIndex].alpha > 0.001)
+  );
 }
 
 export default BaseBrushTool;

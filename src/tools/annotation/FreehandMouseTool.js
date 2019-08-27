@@ -408,6 +408,7 @@ export default class FreehandMouseTool extends BaseAnnotationTool {
    * @returns {undefined}
    */
   renderToolData(evt) {
+    console.log('wot');
     const eventData = evt.detail;
     //Load data if there is some
     var loadedData = globalImageIdSpecificToolStateManager.saveCustomToolState();

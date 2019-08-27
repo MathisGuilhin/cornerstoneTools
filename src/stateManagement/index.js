@@ -39,7 +39,6 @@ export {
   addToolState,
   getToolState,
   removeToolState,
-  modifyToolState,
   clearToolState,
   setElementToolStateManager,
   getElementToolStateManager,

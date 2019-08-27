@@ -104,29 +104,6 @@ function removeToolState(element, toolType, data) {
 }
 
 /**
- * Add specific tool state attribute to the toolStateManager.
- * @public
- * @method modifyToolState
- *
- * @param  {HTMLElement} element  The element.
- * @param  {string} toolType      The toolType of the state.
- * @param  {Object} data          The new toolState data.
- * @returns {undefined}
- */
-function modifyToolState(element, toolType, data) {
-  const toolStateManager = getElementToolStateManager(element);
-  const toolData = toolStateManager.get(element, toolType);
-  const eventType = EVENTS.MEASUREMENT_MODIFIED;
-  const eventData = {
-    toolType,
-    element,
-    measurementData: data,
-  };
-
-  triggerEvent(element, eventType, eventData);
-}
-
-/**
  * Removes all toolState from the toolStateManager corresponding to
  * the toolType and element.
  * @public
@@ -165,7 +142,6 @@ export {
   addToolState,
   getToolState,
   removeToolState,
-  modifyToolState,
   clearToolState,
   setElementToolStateManager,
   getElementToolStateManager,

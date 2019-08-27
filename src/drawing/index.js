@@ -23,7 +23,6 @@ import drawLine from './drawLine.js';
 import drawLines from './drawLines.js';
 import drawLink from './drawLink.js';
 import drawLinkedTextBox from './drawLinkedTextBox.js';
-import drawPolygon from './drawPolygon.js';
 import drawRect from './drawRect.js';
 import drawTextBox from './drawTextBox.js';
 import fillBox from './fillBox.js';
@@ -47,7 +46,6 @@ export {
   drawLines,
   drawLink,
   drawLinkedTextBox,
-  drawPolygon,
   drawRect,
   drawTextBox,
   fillBox,

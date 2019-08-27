@@ -1,13 +1,14 @@
-import store from '../store/index.js';
-import getActiveToolsForElement from '../store/getActiveToolsForElement.js';
-import { getToolState } from '../stateManagement/toolState.js';
-import external from '../externalModules.js';
-import BaseBrushTool from './../tools/base/BaseBrushTool.js';
 import {
   getNewContext,
   resetCanvasContextTransform,
   transformCanvasContext,
 } from '../drawing/index.js';
+
+import BaseBrushTool from './../tools/base/BaseBrushTool.js';
+import external from '../externalModules.js';
+import getActiveToolsForElement from '../store/getActiveToolsForElement.js';
+import { getToolState } from '../stateManagement/toolState.js';
+import store from '../store/index.js';
 
 /* Safari and Edge polyfill for createImageBitmap
  * https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap
@@ -138,17 +139,31 @@ function renderSegmentation(evt, segIndex, segData) {
     );
   }
 
-  if (toolData.data[segIndex].invalidated) {
-    createNewBitmapAndQueueRenderOfSegmentation(evt, toolData, segIndex);
-  }
-}
-
-function createNewBitmapAndQueueRenderOfSegmentation(evt, toolData, segIndex) {
   const eventData = evt.detail;
   const element = eventData.element;
   const enabledElement = external.cornerstone.getEnabledElement(element);
 
+  if (
+    toolData.data[segIndex].invalidated ||
+    state.invalidatedEnabledElements.includes(enabledElement.uuid)
+  ) {
+    createNewBitmapAndQueueRenderOfSegmentation(
+      eventData,
+      enabledElement.uuid,
+      toolData,
+      segIndex
+    );
+  }
+}
+
+function createNewBitmapAndQueueRenderOfSegmentation(
+  { image: eventImage, element },
+  enabledElementUID,
+  toolData,
+  segIndex
+) {
   const pixelData = toolData.data[segIndex].pixelData;
+  const imageSpecificSegmentationAlpha = toolData.data[segIndex].alpha;
 
   if (!pixelData) {
     return;
@@ -158,15 +173,19 @@ function createNewBitmapAndQueueRenderOfSegmentation(evt, toolData, segIndex) {
   const colormap = external.cornerstone.colors.getColormap(colormapId);
   const colorLutTable = [[0, 0, 0, 0], colormap.getColor(segIndex)];
 
-  const imageData = new ImageData(
-    eventData.image.width,
-    eventData.image.height
-  );
+  const imageData = new ImageData(eventImage.width, eventImage.height);
   const image = {
     stats: {},
     minPixelValue: 0,
     getPixelData: () => pixelData,
   };
+
+  const hasImageSpecificSegmentationAlpha =
+    imageSpecificSegmentationAlpha !== undefined;
+
+  if (hasImageSpecificSegmentationAlpha) {
+    colorLutTable[1][3] = imageSpecificSegmentationAlpha;
+  }
 
   external.cornerstone.storedPixelDataToCanvasImageDataColorLUT(
     image,
@@ -176,13 +195,16 @@ function createNewBitmapAndQueueRenderOfSegmentation(evt, toolData, segIndex) {
 
   window.createImageBitmap(imageData).then(newImageBitmap => {
     setters.imageBitmapCacheForElement(
-      enabledElement.uuid,
+      enabledElementUID,
       segIndex,
       newImageBitmap
     );
     toolData.data[segIndex].invalidated = false;
+    state.invalidatedEnabledElements = state.invalidatedEnabledElements.filter(
+      iee => iee !== enabledElementUID
+    );
 
-    external.cornerstone.updateImage(eventData.element);
+    external.cornerstone.updateImage(element);
   });
 }
 

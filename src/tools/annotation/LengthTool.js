@@ -1,4 +1,3 @@
-import external from './../../externalModules.js';
 import BaseAnnotationTool from '../base/BaseAnnotationTool.js';
 // State
 import { getToolState } from './../../stateManagement/toolState.js';
@@ -8,10 +7,8 @@ import toolColors from './../../stateManagement/toolColors.js';
 import {
   getNewContext,
   draw,
-  drawJoinedLines,
   setShadow,
   drawLine,
-  drawPolygon,
 } from './../../drawing/index.js';
 import drawLinkedTextBox from './../../drawing/drawLinkedTextBox.js';
 import drawHandles from './../../drawing/drawHandles.js';
@@ -20,6 +17,7 @@ import { lengthCursor } from '../cursors/index.js';
 import { getLogger } from '../../util/logger.js';
 import getPixelSpacing from '../../util/getPixelSpacing';
 import throttle from '../../util/throttle';
+
 const logger = getLogger('tools:annotation:LengthTool');
 
 /**
@@ -226,13 +224,15 @@ export default class LengthTool extends BaseAnnotationTool {
 
     function textBoxText(data, rowPixelSpacing, colPixelSpacing) {
       // Set the length text suffix depending on whether or not pixelSpacing is available
-      let suffix = ' mm';
+      let suffix = 'mm';
 
       if (!rowPixelSpacing || !colPixelSpacing) {
-        suffix = ' pixels';
+        suffix = 'pixels';
       }
 
-      return `${data.length.toFixed(2)}${suffix}`;
+      data.unit = suffix;
+
+      return `${data.length.toFixed(2)} ${suffix}`;
     }
 
     function textBoxAnchorPoints(handles) {
